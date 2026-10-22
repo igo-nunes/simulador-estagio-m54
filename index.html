@@ -1,0 +1,466 @@
+<title>Simulador do Estágio Obrigatório ESCO</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#f5f5f7; --surface:#ffffff; --fg:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea;
+  --red:#c00000; --work:#c00000; --work-fg:#ffffff; --ok:#1b7f4b; --amber:#b26a00; --bad:#c00000;
+  --wait:#e3eaf5; --dim:#f0f0f3; --start:#2b3a8f; --endc:#6b0000; --ink:#1d1d1f; --tce:#1b7f4b;
+  --font:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#000000; --surface:#1c1c1e; --fg:#f5f5f7; --muted:#a1a1a6; --line:#2c2c2e;
+  --red:#ff6b6b; --work:#c93636; --ok:#62d08f; --amber:#f0b24a; --bad:#ff6b6b;
+  --wait:#243044; --dim:#262628; --start:#4f6bd8; --endc:#a02a2a; --ink:#f5f5f7; --tce:#2e9d62; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1c1c1e; --fg:#f5f5f7; --muted:#a1a1a6; --line:#2c2c2e;
+  --red:#ff6b6b; --work:#c93636; --ok:#62d08f; --amber:#f0b24a; --bad:#ff6b6b;
+  --wait:#243044; --dim:#262628; --start:#4f6bd8; --endc:#a02a2a; --ink:#f5f5f7; --tce:#2e9d62; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.4;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+p{margin:0}
+h1{font-size:1.5rem;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted)}
+.card{background:var(--surface);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.step{display:flex;gap:12px;align-items:center}
+.step .n{width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:none}
+.step b{font-size:1.1rem}
+input[type=date]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;min-height:48px}
+select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:44px}
+.hint{color:var(--muted);font-size:.9rem}
+.big{font-size:1.15rem;font-weight:700}
+.cal{display:flex;flex-direction:column;gap:14px}
+.mes b{display:block;margin-bottom:6px;text-transform:capitalize}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dh{font-size:.72rem;color:var(--muted);text-align:center}
+.c{position:relative;aspect-ratio:1/1.05;border-radius:10px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:.9rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;padding:0;min-height:44px}
+.c small{font-size:.62rem;opacity:.9}
+.c.we{background:var(--dim);color:var(--muted)}
+.c.hol{background:repeating-linear-gradient(45deg,var(--dim),var(--dim) 4px,var(--line) 4px,var(--line) 8px);color:var(--muted)}
+.c.pick{cursor:pointer}
+.c.off{opacity:.35}
+.c.cad{background:var(--ink);color:var(--surface)}
+.c.wait{background:var(--wait)}
+.c.tce{background:var(--tce);color:#fff}
+.c.work{background:var(--work);color:#fff}
+.c.start{background:var(--start);color:#fff}
+.c.endd{background:var(--endc);color:#fff}
+.c.mark::after{content:attr(data-m);position:absolute;top:1px;right:3px;font-size:.55rem;font-weight:700;color:var(--red)}
+.c.work.mark::after,.c.start.mark::after,.c.endd.mark::after{color:#fff}
+.leg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:var(--muted)}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.ring{display:flex;gap:16px;align-items:center}
+.ring svg{flex:none}
+.rtxt{display:flex;flex-direction:column;gap:2px}
+.rtxt .v{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.good{color:var(--ok)}.mid{color:var(--amber)}.low{color:var(--bad)}
+.risk{font-size:.95rem}
+.jd{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.jd label{display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:center;font-size:.8rem;color:var(--muted);min-width:0}
+.jd select{min-height:44px;padding:4px 0;text-align:center;text-align-last:center;font-size:.95rem;width:100%;border-radius:10px;color:var(--fg)}
+.semb{font-weight:700}
+.fs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.fs button{width:100%;display:flex;gap:10px;text-align:left;align-items:flex-start;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;cursor:pointer}
+.fs i{font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-weight:700;font-size:.85rem}
+.fs span{font-size:.88rem;color:var(--muted)}.fs span b{display:block;font-size:.95rem;color:var(--fg)}
+.fs li.on button{border-color:var(--ok)}.fs li.on i{background:var(--ok);color:#fff}
+.rod{text-align:center;color:var(--muted);font-size:.85rem;padding:8px 0}
+.ent{display:flex;flex-direction:column;gap:8px}
+.ent div{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:.9rem}
+.ent b{display:block}.ent span{color:var(--muted)}
+.c.ent::before{content:attr(data-e);position:absolute;bottom:1px;left:50%;transform:translateX(-50%);background:#f2b705;color:#1d1d1f;font-weight:700;font-size:.56rem;line-height:1;padding:2px 3px;white-space:nowrap;border-radius:6px;z-index:1}
+.c.ent{box-shadow:inset 0 0 0 2px #f2b705}
+.c.ent span{font-weight:700;color:var(--fg)}
+.c.ent.endd span,.c.ent.work span,.c.ent.start span{color:#fff}
+.c.ent.mark::after{content:none}
+.dinfo ul,.ent ul{margin:6px 0 0;padding-left:20px}
+.dinfo{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:.92rem;min-height:44px}
+.urg{background:var(--red);color:#fff;border-radius:20px;padding:14px 18px;font-weight:700}
+.urg span{display:block;font-weight:400;font-size:.92rem;margin-top:2px}
+.intro p{font-size:.95rem}
+.caminho{background:var(--bg);border-left:4px solid var(--red);border-radius:10px;padding:10px 12px;font-weight:700}
+.aviso{background:var(--bg);border-left:4px solid var(--red);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.alerta{background:#fde2e2;color:#8a0000;border-radius:12px;padding:10px 12px;font-size:.92rem}
+.alerta[hidden]{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .alerta{background:#4a2222;color:#ffb3b3}}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;font:inherit;font-size:.9rem;min-height:44px;min-width:48px;padding:0 12px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:12px;min-height:44px;padding:0 14px;cursor:pointer}
+.btn.pri{background:var(--red);color:#fff;border-color:var(--red)}
+.check{display:flex;gap:10px;align-items:center;min-height:44px;font-size:.95rem}
+.check input{width:22px;height:22px}
+.law{display:flex;gap:8px;flex-wrap:wrap}
+.law button{font:inherit;font-size:.82rem;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;min-height:36px;padding:0 12px;cursor:pointer}
+.lawp{background:var(--bg);border-radius:14px;padding:12px 14px;font-size:.92rem;display:flex;flex-direction:column;gap:8px}
+.lawp q{display:block;font-style:italic;quotes:none}
+.lawp[hidden]{display:none}
+.lawp a,.links a{color:var(--red)}
+details{background:var(--surface);border-radius:20px;padding:0 18px}
+summary{min-height:56px;display:flex;align-items:center;font-weight:700;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';margin-left:auto;color:var(--muted);font-size:1.3rem}
+details[open] summary::after{content:'–'}
+details>div{padding:0 0 18px;display:flex;flex-direction:column;gap:12px}
+.wk{display:flex;flex-direction:column;gap:6px}
+.wf{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.9rem;background:var(--bg)}
+.wf span{color:var(--muted)}.wf output{font-weight:700;white-space:nowrap}
+.wf.tot output{color:var(--red)}
+.figs{display:flex;flex-direction:column;gap:10px}
+.fig{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fig figcaption{padding:8px 12px;font-size:.88rem}
+.fig.ok figcaption b{color:var(--ok);margin-right:6px}.fig.bad figcaption b{color:var(--bad);margin-right:6px}
+.fig img{width:100%;display:block}
+.pt{display:flex;gap:10px;align-items:flex-start;min-height:44px;font-size:.92rem}
+.pt input{width:22px;height:22px;margin-top:2px;flex:none}
+.pt b{display:block}
+.go{font-weight:700}.go.on{color:var(--ok)}
+.links{display:flex;gap:16px;flex-wrap:wrap}
+#fluxo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+#fluxo[hidden]{display:none}
+.fbox{background:var(--surface);color:var(--fg);border-radius:20px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:16px}
+.fhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.fl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.fl li{border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:.9rem}
+.fl li b{color:var(--red);margin-right:6px}
+.fl li span{display:block;color:var(--muted);font-size:.82rem}
+.fl li.key{border-color:var(--red)}.fl li.ok{border-color:var(--ok)}
+.fl li.dec{background:var(--bg)}
+</style>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Simulador do estágio obrigatório (ESCO)</h1>
+  </header>
+  <div class="urg" id="urg"></div>
+  <section class="card intro" aria-label="Como usar">
+    <b class="big">Simule antes de cadastrar</b>
+    <p>Este simulador ajuda o seu TCE a ser <b>validado mais rápido</b>. Faça a simulação com os seus dados, siga os passos de 1 a 6 e, no final, vá ao seu Aluno Online preencher o cadastro real.</p>
+  </section>
+
+  <section class="card" aria-label="Passo 1">
+    <div class="step"><span class="n">1</span><b>Quando você vai cadastrar</b></div>
+    <p class="hint">Escolha o dia em que você vai cadastrar o TCE. Se for hoje, deixe como está.</p>
+    <input type="date" id="cad" aria-label="Data do cadastro">
+    <p class="hint" id="cadInfo"></p>
+    <div class="ent">
+      <div><b>AVA - Entrega 1 - 29/10</b><ul><li>TCE assinado</li><li>Termo de Ausência de Parentesco</li></ul></div>
+      <div><b>AVA - Entrega 2 - 03/12</b><ul><li>Mapa de Frequência</li><li>Ficha do Supervisor</li><li>Relatório Final</li></ul></div>
+    </div>
+    <p class="aviso" id="e1" hidden></p>
+  </section>
+
+  <section class="card" aria-label="Passo 2">
+    <div class="step"><span class="n">2</span><b>Sua jornada</b></div>
+    <p class="hint">Horas em cada dia da semana. “–” é dia sem estágio. Máximo 6 h por dia e 30 h por semana.</p>
+    <div class="jd" id="dias" role="group" aria-label="Horas por dia da semana"></div>
+    <p class="semb" id="semInfo"></p>
+    <p class="alerta" id="alerta" hidden></p>
+    <label class="check" for="fer"><input type="checkbox" id="fer"><span>Vou estagiar nos feriados (combinado com o supervisor)</span></label>
+    <div class="row"><button class="btn" id="max" type="button">Usar o máximo da lei: 6 h, seg a sex</button></div>
+    <p class="hint" id="maxMsg" aria-live="polite"></p>
+
+    <div class="law">
+      <button type="button" data-l="a10">Lei 11.788 · art. 10, II</button>
+      <button type="button" data-l="a3">Lei 11.788 · art. 3º</button>
+    </div>
+    <div class="lawp" id="lawp" hidden></div>
+
+  </section>
+
+  <section class="card" aria-label="Passo 3">
+    <div class="step"><span class="n">3</span><b>Quando você entra em campo</b></div>
+    <p class="hint">Toque no dia em que você começa a estagiar. É o dia em que a Carta de Autorização já está com você ou depois dele. As horas só contam a partir da Carta.</p>
+    <div class="cal" id="cal"></div>
+    <div class="dinfo" id="dinfo"><b>AVA-E1</b> e <b>AVA-E2</b> são as entregas no AVA. Toque nelas para ver o que postar.</div>
+    <div class="leg">
+      <span><i style="background:var(--ink)"></i>cadastro</span>
+      <span><i style="background:var(--wait)"></i>assinaturas e Carta</span>
+      <span><i style="background:var(--start)"></i>entra em campo</span>
+      <span><i style="background:var(--work)"></i>horas acumuladas</span>
+      <span><i style="background:var(--endc)"></i>completa 90 h</span>
+      <span><b style="color:var(--red)">AVA-E1 · AVA-E2</b> entregas</span>
+      <span><i style="background:repeating-linear-gradient(45deg,var(--dim),var(--dim) 2px,var(--line) 2px,var(--line) 4px)"></i>feriado</span>
+    </div>
+    <p class="hint">A UNIPAR não tem expediente administrativo à noite, sábado, domingo e feriado. Esses dias contam nos 10 dias, mas ninguém assina nem valida neles.</p>
+    <div class="ring">
+      <svg width="116" height="116" viewBox="0 0 116 116" aria-hidden="true">
+        <circle cx="58" cy="58" r="50" fill="none" stroke="var(--line)" stroke-width="10"/>
+        <circle id="arc" cx="58" cy="58" r="50" fill="none" stroke="var(--ok)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" transform="rotate(-90 58 58)"/>
+        <text id="rnum" x="58" y="64" text-anchor="middle" font-size="26" font-weight="700" fill="currentColor">0</text>
+      </svg>
+      <div class="rtxt">
+        <div class="v" id="rv"></div>
+        <div id="rs" class="sub"></div>
+      </div>
+    </div>
+    <p class="risk" id="risk"></p>
+    <p class="hint" id="custo"></p>
+  </section>
+
+  <section class="card" aria-label="Passo 4">
+    <div class="step"><span class="n">4</span><b>Veja como preencher o formulário</b></div>
+    <p class="hint">Estes são os valores da sua simulação. Use como modelo no cadastro real.</p>
+    <p class="aviso"><b>Confira todos os dados antes de cadastrar.</b> Depois de cadastrado, o aluno não consegue alterar. Se precisar corrigir algo, como um e-mail, a troca deve ser formalizada pela Central de Relacionamento do Estudante, via WhatsApp.</p>
+    <div class="wk">
+      <div class="wf"><span>Data de início do estágio*</span><output id="wkIni"></output></div>
+      <div class="wf"><span>Data de término do estágio*</span><output>03/12/2026</output></div>
+      <div class="wf"><span>Carga horária diária*</span><output id="wkDia"></output></div>
+      <div class="wf"><span>Carga horária semanal*</span><output id="wkSem"></output></div>
+      <div class="wf tot"><span>Carga horária total do estágio*</span><output>90:00</output></div>
+    </div>
+    <p class="alerta" id="wkAl" hidden></p>
+    <p class="hint"><b>Término: 03/12/2026 para todos.</b></p>
+    <p class="hint"><b>Carga horária total:</b> o Workalove calcula sozinho pelas datas e pela jornada e pode mostrar 88:00, 104:00 ou outro valor. Esse campo é editável: toque nele, apague e digite 90:00. O total do TCE é 90:00, nunca menos.</p>
+    <div class="figs">
+      <figure class="fig ok"><figcaption><b>Certo</b>Término 03/12 e total 90:00</figcaption><img src="img/certo.jpg" alt="Formulário do Workalove preenchido corretamente: término 03/12/2026, total 90:00"></figure>
+      <figure class="fig bad"><figcaption><b>Errado</b>Dois erros marcados na imagem</figcaption><img src="img/errado1.jpg" alt="Formulário do Workalove com total 88:00 e término 17/11/2026"></figure>
+      <figure class="fig bad"><figcaption><b>Errado</b>Um erro marcado na imagem</figcaption><img src="img/errado2.jpg" alt="Formulário do Workalove com término 23/11/2026"></figure>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Passo 5">
+    <div class="step"><span class="n">5</span><b>Confira 5 itens antes de cadastrar</b></div>
+    <p class="hint">Toque em cada item quando tiver conferido.</p>
+    <div id="pts"></div>
+    <p class="go" id="go"></p>
+  </section>
+
+  <section class="card" aria-label="Acompanhe o status">
+    <div class="step"><span class="n">6</span><b>Agora cadastre de verdade</b></div>
+    <p><b>Vá ao seu Aluno Online</b> e preencha os dados reais:</p>
+    <p class="caminho">Aluno Online › Porta de Carreiras › Gestão de Estágio</p>
+    <p class="hint">Use os valores que você simulou. Depois de cadastrar, acompanhe o status aqui:</p>
+    <ol class="fs" id="fs">
+      <li><button type="button"><i>1</i><span><b>Você cadastra o TCE no Workalove</b>Confira tudo antes de salvar.</span></button></li>
+      <li><button type="button"><i>2</i><span><b>Coordenação e Central de Estágios validam</b>Só em dia útil e horário comercial. Se pedirem alteração, corrija no HOP no mesmo dia. Acompanhe o status todo dia.</span></button></li>
+      <li><button type="button"><i>3</i><span><b>Chega o link de assinatura no seu e-mail</b>Assine digitalmente e avise o supervisor para assinar o dele.</span></button></li>
+      <li><button type="button"><i>4</i><span><b>TCE finalizado com as 3 assinaturas</b>Aluno, concedente e UNIPAR.</span></button></li>
+      <li><button type="button"><i>5</i><span><b>Carta de Autorização de Início de Estágio</b>Só depois dela você vai a campo. As horas contam daqui.</span></button></li>
+    </ol>
+    <p class="hint">Toque em cada etapa para marcar onde você está. Depois do cadastro, volte aqui para acompanhar.</p>
+    <p class="aviso"><b>Por que 10 dias?</b> Pelo histórico de tempo de validação, correção e assinatura, o prazo ficou em 10 dias. Pode sair antes, mas depende de vários fatores, principalmente dos ajustes necessários e das assinaturas.</p>
+  </section>
+
+  <details>
+    <summary>Dúvida: como escrever o plano de atividades</summary>
+    <div>
+      <p><b>3 ou 4 atividades, uma por linha.</b> Cada uma: verbo no infinitivo + o quê + onde ou como.</p>
+      <p class="hint">Exemplo: “Acompanhar a execução da rede de drenagem na obra.” Não coloque horas nem dias, esses dados já estão em outro campo.</p>
+      <div id="fer1" hidden>
+        <p class="hint">Como você marcou que vai estagiar em feriado, cole esta frase no final do plano:</p>
+        <textarea id="txt" readonly rows="3" style="font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;width:100%"></textarea>
+        <div class="row"><button class="btn pri" id="copiar" type="button">Copiar frase</button><span id="copMsg" class="hint" aria-live="polite"></span></div>
+      </div>
+      <p class="hint" id="fer0">Se você não vai estagiar em feriado, não precisa escrever nada sobre isso.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Fluxograma e materiais</summary>
+    <div>
+      <div class="links">
+        <a href="#fluxograma" id="abrirFluxo">Fluxograma</a>
+        <a href="https://docs.google.com/document/d/1QHiITGJDkW6cKSv_KWjYPXYPbL-9wZ9C/edit?usp=drive_link&ouid=110939500924004484577&rtpof=true&sd=true" target="_blank" rel="noopener">Dúvidas iniciais</a>
+      </div>
+    </div>
+  </details>
+  <footer class="rod">Núcleo de Engenharias EAD/Semipresencial</footer>
+</div>
+
+<div id="fluxo" role="dialog" aria-modal="true" aria-label="Fluxograma do estágio" hidden>
+  <div class="fbox">
+    <div class="fhead"><b>Do cadastro à nota final</b><button type="button" class="btn" id="fecharFluxo">Fechar</button></div>
+    <ol class="fl">
+      <li><b>1</b> Baixar a Carta de Apresentação no AVA</li>
+      <li><b>2</b> Procurar a concedente (empresa com CNPJ ativo) ou profissional liberal (CREA ativo)</li>
+      <li><b>3</b> Aluno Online › Porta de Carreiras › Gestão de Estágio</li>
+      <li class="key"><b>4</b> Cadastrar o TCE no Workalove (HOP)<span>Início 10 dias depois do cadastro · carga horária total 90 h · vigência até 03/12</span></li>
+      <li class="dec">Dados aprovados pela Coordenação e pela Central de Estágios?<span>Não: corrija e reenvie no HOP (volta ao 4) · Sim: segue</span></li>
+      <li><b>5</b> Assinatura digital (Clicksign): aluno, concedente e UNIPAR</li>
+      <li class="dec">Todos assinaram?<span>Não: novo aviso por e-mail para assinar · Sim: segue</span></li>
+      <li class="ok"><b>6</b> TCE finalizado (3 assinaturas)</li>
+      <li class="key"><b>7</b> Carta de Autorização de Início de Estágio<span>Só então você vai a campo. As horas contam a partir dela</span></li>
+      <li><b>8</b> Postagem 1 no AVA (40%): TCE assinado + Termo de Ausência de Parentesco<span>até 29/10</span></li>
+      <li><b>9</b> Estágio em campo: 90 h, até 6 h por dia e 30 h por semana<span>início até 05/11</span></li>
+      <li><b>10</b> Postagem 2 no AVA (60%): Mapa de Frequência + Ficha do Supervisor + Relatório Final<span>até 03/12</span></li>
+      <li class="ok"><b>Nota final</b> 17/12 no Aluno Online</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+(function(){
+var TOTAL=90,LIM_DIA=6,LIM_SEM=30,FIM='2026-12-03',MARCA='2026-11-05',INI_MOD='2026-09-28';
+var INFO={
+'2026-10-29':'<b>AVA - Entrega 1 - 29/10</b><ul><li>TCE assinado</li><li>Termo de Ausência de Parentesco</li></ul>',
+'2026-11-05':'<b>05/11</b><ul><li>Data do cronograma para iniciar o estágio em campo</li></ul>',
+'2026-12-03':'<b>AVA - Entrega 2 - 03/12</b><ul><li>Mapa de Frequência</li><li>Ficha do Supervisor</li><li>Relatório Final</li></ul>'};
+var HOL={'2026-11-02':'Finados','2026-11-15':'Proclamação da República','2026-11-20':'Consciência Negra'};
+var NOM=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+var CUR=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+var MESN=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function $(i){return document.getElementById(i);}
+function P(s){var a=s.split('-');return new Date(+a[0],+a[1]-1,+a[2]);}
+function I(d){var m=d.getMonth()+1,x=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(x<10?'0':'')+x;}
+function BR(s){var a=s.split('-');return a[2]+'/'+a[1]+'/'+a[0];}
+function B2(s){var a=s.split('-');return a[2]+'/'+a[1];}
+function add(s,n){var d=P(s);d.setDate(d.getDate()+n);return I(d);}
+function dow(s){return P(s).getDay();}
+function util(s){var w=dow(s);return w>0&&w<6&&!HOL[s];}
+function proxUtil(s){while(!util(s))s=add(s,1);return s;}
+function hh(h){return (h<10?'0':'')+h+':00';}
+var hoje=I(new Date());if(hoje<INI_MOD)hoje=INI_MOD;
+var st={cad:hoje,ini:null,tocou:false,h:[0,6,6,6,6,6,0],fer:false};
+
+$('cad').min=hoje;$('cad').max=FIM;$('cad').value=hoje;
+var dh=$('dias');
+[1,2,3,4,5,6,0].forEach(function(d){var l=document.createElement('label');l.textContent=CUR[d];
+  var s=document.createElement('select');s.dataset.d=d;s.setAttribute('aria-label',NOM[d]);
+  for(var h=0;h<=LIM_DIA;h++){var o=document.createElement('option');o.value=h;o.textContent=h===0?'–':h+'h';s.appendChild(o);}
+  l.appendChild(s);dh.appendChild(l);});
+function somaSem(h){return h.reduce(function(a,b){return a+b;},0);}
+function maxDia(){return Math.max.apply(null,st.h);}
+
+function minIni(){return add(st.cad,10);}
+
+function calc(){
+  var sched={},cum={},tot=0,sem={},fim=null,primeiro=null;
+  for(var d=st.ini;d<=FIM;d=add(d,1)){
+    if(!st.h[dow(d)])continue;
+    if(HOL[d]&&!st.fer)continue;
+    var wk=add(d,-((dow(d)+6)%7));
+    var usado=sem[wk]||0;
+    var h=Math.min(st.h[dow(d)],LIM_SEM-usado,TOTAL-tot);
+    if(h<=0)continue;
+    sem[wk]=usado+h;tot+=h;sched[d]=h;cum[d]=tot;if(!primeiro)primeiro=d;
+    if(tot>=TOTAL){fim=d;break;}
+  }
+  return {sched:sched,cum:cum,tot:tot,fim:fim,primeiro:primeiro};
+}
+
+function diasUteisAte(a,b){var n=0,d=a;while(d<b){d=add(d,1);if(util(d))n++;}return n;}
+
+function drawCal(r){
+  var box=$('cal');box.innerHTML='';
+  [[2026,9],[2026,10],[2026,11]].forEach(function(m){
+    var w=document.createElement('div');w.className='mes';
+    var t=document.createElement('b');t.textContent=MESN[m[1]]+' '+m[0];w.appendChild(t);
+    var g=document.createElement('div');g.className='grid';
+    CUR.forEach(function(x){var e=document.createElement('div');e.className='dh';e.textContent=x;g.appendChild(e);});
+    var first=new Date(m[0],m[1],1),last=new Date(m[0],m[1]+1,0).getDate();
+    for(var k=0;k<first.getDay();k++)g.appendChild(document.createElement('div'));
+    for(var n=1;n<=last;n++){
+      var iso=I(new Date(m[0],m[1],n));
+      var c=document.createElement('button');c.type='button';c.className='c';c.dataset.d=iso;
+      var wd=dow(iso),tt=[];
+      var span='<span>'+n+'</span>';
+      if(wd===0||wd===6)c.classList.add('we');
+      if(HOL[iso]){c.classList.add('hol');tt.push(HOL[iso]);}
+      if(iso<st.cad||iso>FIM){c.classList.add('off');c.disabled=true;}
+      else if(iso>=minIni()){c.classList.add('pick');}
+      else if(iso>st.cad){c.classList.add('wait');tt.push('10 dias do cadastro');c.disabled=true;}
+      if(iso===st.cad){c.classList.add('cad');tt.push('Cadastro');}
+      if(r.sched[iso]){c.classList.remove('we','hol');c.classList.add('work');span+='<small>'+r.cum[iso]+'h</small>';tt.push(r.cum[iso]+' h acumuladas');}
+      if(iso>st.cad&&iso<st.ini&&!c.classList.contains('cad')){c.classList.remove('off');c.classList.add('wait');c.classList.remove('we');}
+      if(iso===st.ini){c.classList.remove('we','hol');c.classList.add('start');tt.push('Entra em campo');if(!r.sched[iso])span+='<small>início</small>';}
+      if(r.fim===iso){c.classList.remove('work');c.classList.add('endd');tt.push('Completa 90 h');}
+      if(iso===MARCA){c.classList.add('mark');c.dataset.m='05/11';tt.push('Data do cronograma para iniciar');}
+      if(INFO[iso]){c.disabled=false;c.dataset.info=iso;tt.push(INFO[iso].replace(/<li>/g,' · ').replace(/<[^>]+>/g,''));}
+      if(iso==='2026-10-29'){c.classList.add('ent');c.dataset.e='AVA-E1';}
+      if(iso===FIM){c.classList.add('ent');c.dataset.e='AVA-E2';}
+      c.innerHTML=span;c.title=tt.join(' · ');c.setAttribute('aria-label',n+' de '+MESN[m[1]]+(tt.length?', '+tt.join(', '):''));
+      g.appendChild(c);
+    }
+    w.appendChild(g);box.appendChild(w);
+  });
+}
+
+function feriadoFrase(){
+  if(!st.fer)return '';
+  var hs=Object.keys(HOL).filter(function(k){return k>=st.ini&&k<=FIM&&dow(k)!==0&&dow(k)!==6;}).map(B2);
+  if(!hs.length)return '';
+  if(hs.length===1)return 'Conforme acordado com o supervisor, o estágio será realizado no feriado de '+hs[0]+'.';
+  return 'Conforme acordado com o supervisor, o estágio será realizado nos feriados de '+hs.slice(0,-1).join(', ')+' e '+hs[hs.length-1]+'.';
+}
+document.addEventListener('click',function(e){var b=e.target.closest('.fs button');if(b)b.parentNode.classList.toggle('on');});
+var LAW={
+ a10:'<b>Lei 11.788/2008, art. 10, II</b><q>“A jornada de atividade em estágio será definida de comum acordo entre a instituição de ensino, a parte concedente e o aluno estagiário ou seu representante legal, devendo constar do termo de compromisso ser compatível com as atividades escolares e não ultrapassar: [...] II – 6 (seis) horas diárias e 30 (trinta) horas semanais, no caso de estudantes do ensino superior, da educação profissional de nível médio e do ensino médio regular.”</q>',
+ a3:'<b>Lei 11.788/2008, art. 3º</b><q>“O estágio, tanto na hipótese do § 1º do art. 2º desta Lei quanto na prevista no § 2º do mesmo dispositivo, não cria vínculo empregatício de qualquer natureza, observados os seguintes requisitos: [...] II – celebração de termo de compromisso entre o educando, a parte concedente do estágio e a instituição de ensino;”</q><q>“§ 2º O descumprimento de qualquer dos incisos deste artigo ou de qualquer obrigação contida no termo de compromisso caracteriza vínculo de emprego do educando com a parte concedente do estágio para todos os fins da legislação trabalhista e previdenciária.”</q>'
+};
+var lawAberto=null;
+var LINK='<a href="https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2008/lei/l11788.htm" target="_blank" rel="noopener">Ler a lei completa no Planalto</a>';
+
+function urgente(){var n=Math.round((P('2026-10-29')-P(hoje))/864e5),u=$('urg'),ap='';
+  if(n>0)u.innerHTML='Ainda não cadastrou seu TCE? Cadastre HOJE!<span>Faltam '+n+' dia'+(n===1?'':'s')+' para a Entrega 1 (29 de outubro).</span>';
+  else if(n===0)u.innerHTML='Hoje é a Entrega 1 (29 de outubro).<span>Fale com seu orientador agora.</span>';
+  else u.innerHTML='A Entrega 1 (29 de outubro) já passou.<span>Fale com seu orientador hoje.</span>';}
+function draw(){
+  if(st.cad<hoje)st.cad=hoje;
+  var mi=minIni();
+  if(!st.tocou||!st.ini||st.ini<mi||st.ini>FIM){st.ini=proxUtil(mi);if(st.ini>FIM)st.ini=FIM;}
+  $('cadInfo').textContent='Cadastro '+B2(st.cad)+' → início a partir de '+B2(mi)+' (10 dias corridos) → vigência até 03/12.';
+  var e1=$('e1');
+  if(st.cad>'2026-10-26'){e1.textContent='Depois de 26/10, o TCE dificilmente fica assinado até a Entrega 1 (29/10). Procure seu orientador hoje.';e1.hidden=false;e1.style.borderLeftColor='var(--bad)';}
+  else e1.hidden=true;
+  var r=calc();
+  drawCal(r);
+  var pct=Math.min(r.tot/TOTAL,1);
+  $('arc').setAttribute('stroke-dashoffset',(314.16*(1-pct)).toFixed(1));
+  var cls=r.tot>=TOTAL?'good':(r.tot>=TOTAL*0.75?'mid':'low');
+  $('arc').setAttribute('stroke',cls==='good'?'var(--ok)':cls==='mid'?'var(--amber)':'var(--bad)');
+  $('rnum').textContent=r.tot;
+  var rv=$('rv');rv.className='v '+cls;rv.textContent=r.tot+' h de 90 h até 03/12';
+  $('rs').textContent=r.fim?('Completa 90 h em '+NOM[dow(r.fim)]+', '+B2(r.fim)+'.'):(r.tot>0?'Soma até 03/12 e para.':'Sem horas até 03/12.');
+  var risk=$('risk');
+  if(r.tot>=TOTAL){risk.className='risk good';risk.textContent='Fecha as 90 h do mínimo da matriz.';}
+  else{risk.className='risk '+cls;risk.textContent='Abaixo do mínimo da matriz (90 h): risco de reprovação. O TCE não pode ser cadastrado com menos de 90:00. Aumente a jornada, entre em campo antes ou fale com seu orientador.';}
+  var cus=[];
+  if(st.ini<=MARCA){var n=diasUteisAte(st.ini,MARCA);cus.push('Folga até 05/11: '+n+' dia'+(n===1?'':'s')+' útei'+(n===1?'l':'s')+'.');}
+  cus.push('Cada dia útil sem a Carta tira até '+maxDia()+' h.');
+  $('custo').textContent=cus.join(' ');
+  var semh=somaSem(st.h);
+  $('semInfo').textContent='Total na semana: '+semh+' h de no máximo 30 h';
+  [].forEach.call(dh.querySelectorAll('select'),function(s){s.value=st.h[+s.dataset.d];});
+  var wa=$('wkAl');if(r.tot<TOTAL){wa.textContent='Seu calendário soma só '+r.tot+' h. Não digite 90:00 se o seu calendário não fecha 90 h, e não cadastre menos que 90:00. Ajuste a jornada ou fale com seu orientador antes de cadastrar.';wa.hidden=false;}else wa.hidden=true;
+  $('wkIni').textContent=BR(st.ini);var vs=st.h.filter(function(x){return x>0;});var igl=vs.every(function(x){return x===vs[0];});$('wkDia').textContent=hh(maxDia())+(igl?'':' (varia por dia)');$('wkSem').textContent=hh(semh);
+  var ff=feriadoFrase();$('txt').value=ff;$('fer1').hidden=!ff;$('fer0').hidden=!!ff;
+  $('fer').checked=st.fer;
+}
+
+$('cad').addEventListener('change',function(){var v=this.value;if(!v||v<hoje)v=hoje;if(v>FIM)v=FIM;st.cad=v;this.value=v;draw();});
+$('cal').addEventListener('click',function(e){var i=e.target.closest('.c');if(i&&i.dataset.info)$('dinfo').innerHTML=INFO[i.dataset.info];var c=e.target.closest('.c.pick');if(!c||c.dataset.e)return;st.ini=c.dataset.d;st.tocou=true;draw();});
+dh.addEventListener('change',function(e){var s=e.target;if(!s.dataset.d)return;var d=+s.dataset.d,novo=+s.value,al=$('alerta');
+  var h2=st.h.slice();h2[d]=novo;
+  if(somaSem(h2)>LIM_SEM){al.textContent='Passou de 30 h por semana. A lei não permite. Reduza as horas em outro dia antes de aumentar este.';al.hidden=false;s.value=st.h[d];return;}
+  if(!somaSem(h2)){al.textContent='Escolha ao menos um dia com horas.';al.hidden=false;s.value=st.h[d];return;}
+  al.hidden=true;st.h=h2;$('maxMsg').textContent='';draw();});
+$('fer').addEventListener('change',function(){st.fer=this.checked;draw();});
+$('max').addEventListener('click',function(){st.h=[0,6,6,6,6,6,0];$('alerta').hidden=true;$('maxMsg').textContent='Jornada no limite da lei: 6 h por dia e 30 h por semana.';draw();});
+document.querySelector('.law').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var k=b.dataset.l,p=$('lawp');
+  if(lawAberto===k){p.hidden=true;lawAberto=null;return;}
+  lawAberto=k;p.innerHTML=LAW[k]+LINK;p.hidden=false;});
+$('copiar').addEventListener('click',function(){var t=$('txt'),m=$('copMsg');
+  function fb(){t.focus();t.select();try{document.execCommand('copy');m.textContent='Copiado.';}catch(x){m.textContent='Selecione e copie.';}}
+  try{navigator.clipboard.writeText(t.value).then(function(){m.textContent='Copiado.';},fb);}catch(x){fb();}});
+$('abrirFluxo').addEventListener('click',function(e){e.preventDefault();$('fluxo').hidden=false;});
+$('fecharFluxo').addEventListener('click',function(){$('fluxo').hidden=true;});
+$('fluxo').addEventListener('click',function(e){if(e.target===this)this.hidden=true;});
+
+var PTS=[
+ ['Carga horária total: 90 h','É o mínimo da matriz: abaixo disso, reprova. O Workalove calcula sozinho, então edite e deixe 90:00.'],
+ ['Início 10 dias depois do cadastro','O fim da vigência é 03/12. A vigência pode ser maior que as 90 h.'],
+ ['Máximo 6 h por dia e 30 h por semana','Feriado sem expediente não conta como hora.'],
+ ['Dados e e-mails certos antes de salvar','Depois do cadastro, empresa e supervisor ficam travados. Teste os e-mails.'],
+ ['Só vou a campo depois da Carta de Autorização','TCE cadastrado não basta. Precisa das 3 assinaturas e da Carta.']
+];
+$('pts').innerHTML=PTS.map(function(p,i){return '<label class="pt"><input type="checkbox" data-p="'+i+'"><span><b>'+p[0]+'</b>'+p[1]+'</span></label>';}).join('');
+function prog(){var c=$('pts').querySelectorAll('input:checked').length;$('go').className='go'+(c===PTS.length?' on':'');
+  $('go').textContent=c===PTS.length?'Tudo certo. Cadastre o TCE agora.':'Faltam '+(PTS.length-c)+' itens. Confirme um a um.';}
+$('pts').addEventListener('change',prog);prog();
+urgente();draw();
+})();
+</script>
